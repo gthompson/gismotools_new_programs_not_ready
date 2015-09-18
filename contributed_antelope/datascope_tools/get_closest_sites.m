@@ -201,8 +201,7 @@ end
 % limit the number of sites
 numsites = min([maxsta numel(sites)]);
 sites = sites(1:numsites);
-sites.channeltag
-sites.calib
+
 
 
 
