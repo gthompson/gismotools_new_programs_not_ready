@@ -26,18 +26,19 @@ for c=1:length(chantag)
 	mseedfiles(c).filepath={};
 	mseedfiles(c).exists=[];
 	try
-		debug.print_debug(5, 'Calling getfilename');
+		debug.print_debug(2, 'Calling getfilename');
 		dbname = getfilename(ds, chantag(c), snum); % this is a cell array
         for k=1:numel(dbname)
             debug.print_debug(2, sprintf('dbname = %s\n',dbname{k}));
         end
 	catch
-		fprintf('getfilename failed for %s\n',string(chantag(c)));
+		debug.print_debug(1,sprintf('getfilename failed for %s',string(chantag(c))));
 		continue;
-	end
-	if exist(sprintf('%s.wfdisc',dbname{1}), 'file')
+    end
+
+	if exist(sprintf('%s.wfdisc',dbname{1}), 'file') | exist(dbname{1}, 'file')
 		try
-			debug.print_debug(5,'Opening database %s\n',dbname{1});
+			debug.print_debug(5,'Opening database %s',dbname{1});
 			db=dbopen(dbname{1},'r');
 		catch
 			debug.print_debug(1,sprintf('Could not dbopen database %s or %s.wfdisc - possibly no descriptor',dbname{1}, dbname{1}));
@@ -48,7 +49,7 @@ for c=1:length(chantag)
             end
 		end
 		try
-			debug.print_debug(5,'Opening table %s.wfdisc\n',dbname{1});
+			debug.print_debug(2,'Opening table %s.wfdisc\n',dbname{1});
 			db=dblookup_table(db,'wfdisc');
 		catch
 			disp('Failed on dblookup_table wfdisc\n');
@@ -56,24 +57,24 @@ for c=1:length(chantag)
 		end
 		expr = sprintf('sta=="%s" && chan=="%s" && time <= %f && endtime >= %f',chantag(c).station,chantag(c).channel,datenum2epoch(enum),datenum2epoch(snum));
 		try
-			debug.print_debug(5, 'Trying dbsubset with: %s\n',expr);
+			debug.print_debug(2, 'Trying dbsubset with: %s\n',expr);
 			db=dbsubset(db,expr);
 		catch
-			debug.print_debug(5,'Failed on dbsubset');
+			debug.print_debug(2,'Failed on dbsubset');
 			continue;
 		end
 		try
-			debug.print_debug(5,'Trying dbquery for RECORD_COUNT\n');
+			debug.print_debug(2,'Trying dbquery for RECORD_COUNT\n');
 			nrecs = dbquery(db, 'dbRECORD_COUNT');
 		catch
-			debug.print_debug(5,'Failed on dbquery');
+			debug.print_debug(2,'Failed on dbquery');
 			continue;
 		end
-		debug.print_debug(5, 'Number of records = %d\n',nrecs);
+		debug.print_debug(2, 'Number of records = %d\n',nrecs);
         dbdir = fileparts(dbname{1});
 		if nrecs>0
 			try
-				debug.print_debug(5, 'Getting dir, dfile, time, endtime\n');
+				debug.print_debug(2, 'Getting dir, dfile, time, endtime\n');
 				[ddir, ddfile] = dbgetv(db, 'dir', 'dfile', 'time', 'endtime');
                 ddfullfile = fullfile(dbdir, ddir, ddfile); % ddir and ddfile are both cell arrays & file paths are relative to db dir
                 uniquefile = unique(ddfullfile); % if there are two time segments pointing to same file, there are two wfdisc records. but we want only the unique dir/dfile combos here
@@ -81,7 +82,7 @@ for c=1:length(chantag)
                 % this for "dbname = getfilename(ds, chantag, enum)" 
                 
 			catch
-				debug.print_debug(5,'Failed on dbgetv');
+				debug.print_debug(2,'Failed on dbgetv');
 			end
 			if ~(strcmp(class(ddir),'cell'))
 				ddir={ddir};

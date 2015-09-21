@@ -24,16 +24,16 @@ end
 % if ~exist(sprintf('%s.site',sitesdb))
 %     sitesdb = input('Please enter sites database path', 's')
 % end
-debug.print_debug(0,sprintf('sites db is %s',sitesdb))
+debug.print_debug(1,sprintf('sites db is %s',sitesdb))
 dbptr = dbopen(sitesdb, 'r');
 
 % Filter the site table
 dbptr_site = dblookup_table(dbptr, 'site');
 nrecs = dbquery(dbptr_site, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('Site table has %d records', nrecs));
+debug.print_debug(2,sprintf('Site table has %d records', nrecs));
 dbptr_site = dbsubset(dbptr_site, sprintf('distance(lon, lat, %.4f, %.4f)<%.4f',lon,lat,km2deg(distkm)));
 nrecs = dbquery(dbptr_site, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('After distance subset to lat %f and lon %f: %d records', lat, lon, nrecs));
+debug.print_debug(2,sprintf('After distance subset to lat %f and lon %f: %d records', lat, lon, nrecs));
 
 if ~exist('snum', 'var')
     % No start time given, so assume we just want sites that exist today.
@@ -41,30 +41,28 @@ if ~exist('snum', 'var')
     dbptr_site = dbsubset(dbptr_site, sprintf('offdate == NULL'));
 else
     % Remove any sites that were decommissioned before the start time
-    debug.print_debug(20,sprintf('offdate == NULL || offdate > %s',datenum2julday(snum)));
+    debug.print_debug(2,sprintf('offdate == NULL || offdate > %s',datenum2julday(snum)));
     dbptr_site = dbsubset(dbptr_site, sprintf('offdate == NULL || offdate > %s',datenum2julday(snum)));
 end
 % Remove any sites that were installed after the end time (this may remove
 % some sites that exist today)
 if exist('enum', 'var')
-    debug.print_debug(20, sprintf('ondate  < %s',datenum2julday(enum)));
+    debug.print_debug(2, sprintf('ondate  < %s',datenum2julday(enum)));
     dbptr_site = dbsubset(dbptr_site, sprintf('ondate  < %s',datenum2julday(enum)));
 end
 nrecs = dbquery(dbptr_site, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('After time subset: %d records', nrecs));
+debug.print_debug(2,sprintf('After time subset: %d records', nrecs));
 %dbgetv(db, 'sta')
-
-
 
 % Filter the sitechan table
 dbptr_sitechan = dblookup_table(dbptr, 'sitechan');
 nrecs = dbquery(dbptr_sitechan, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('sitechan has %d records', nrecs));
+debug.print_debug(2,sprintf('sitechan has %d records', nrecs));
 
 if exist('chanmatch','var')
     dbptr_sitechan = dbsubset(dbptr_sitechan, chanmatch);
     nrecs = dbquery(dbptr_sitechan, 'dbRECORD_COUNT');
-    debug.print_debug(20,sprintf('After chan subset: %d records', nrecs));
+    debug.print_debug(2,sprintf('After chan subset: %d records', nrecs));
 end
 
 if ~exist('snum', 'var')
@@ -73,32 +71,32 @@ if ~exist('snum', 'var')
     dbptr_sitechan = dbsubset(dbptr_sitechan, sprintf('offdate == NULL'));
 else
     % Remove any sites that were decommissioned before the start time
-    debug.print_debug(20,sprintf('offdate == NULL || offdate > %s',datenum2julday(snum)));
+    debug.print_debug(2,sprintf('offdate == NULL || offdate > %s',datenum2julday(snum)));
     dbptr_sitechan = dbsubset(dbptr_sitechan, sprintf('offdate == NULL || offdate > %s',datenum2julday(snum)));
 end
 % Remove any sites that were installed after the end time (this may remove
 % some sites that exist today)
 if exist('enum', 'var')
-    debug.print_debug(20,sprintf('ondate  < %s',datenum2julday(enum)));
+    debug.print_debug(2,sprintf('ondate  < %s',datenum2julday(enum)));
     dbptr_sitechan = dbsubset(dbptr_sitechan, sprintf('ondate  < %s',datenum2julday(enum)));
 end
 nrecs = dbquery(dbptr_sitechan, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('After time subset: %d records', nrecs));
+debug.print_debug(2,sprintf('After time subset: %d records', nrecs));
 %dbgetv(dbptr_sitechan, 'sta')
 
 % Join site and sitechan
 dbptr_sitechan = dbjoin(dbptr_site, dbptr_sitechan);
 nrecs = dbquery(dbptr_sitechan, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('After join site-sitechan %d records', nrecs));
+debug.print_debug(2,sprintf('After join site-sitechan %d records', nrecs));
 %dbgetv(dbptr_sitechan, 'sta')
 
 % Read snetsta to get network code
 dbptr_snetsta = dblookup_table(dbptr, 'snetsta');
 nrecs = dbquery(dbptr_snetsta, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('snetsta has %d records', nrecs));
+debug.print_debug(2,sprintf('snetsta has %d records', nrecs));
 dbptr_snetsta = dbjoin(dbptr_sitechan, dbptr_snetsta);
 nrecs = dbquery(dbptr_snetsta, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('After join site-sitechan-snetsta: %d records', nrecs));
+debug.print_debug(2,sprintf('After join site-sitechan-snetsta: %d records', nrecs));
 snet = dbgetv(dbptr_snetsta, 'snet');
 sta = dbgetv(dbptr_snetsta, 'sta');
 stanetmap = containers.Map();
@@ -107,15 +105,15 @@ for c=1:numel(sta)
 end
     
 % If there is a calibration table, get the calib value and units
-dbptr_calibration = dblookup_table(dbptr, 'calibration')
+dbptr_calibration = dblookup_table(dbptr, 'calibration');
 nrecs = dbquery(dbptr_calibration, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('calibration has %d records', nrecs));
+debug.print_debug(2,sprintf('calibration has %d records', nrecs));
 %dbptr_calibration = dbjoin(dbptr_sitechan, dbptr_calibration,
 %{'sta';'chan'}, {'sta';'chan'}); % danger with this is no subset on ondate/offdate
 dbptr_calibration = dbjoin(dbptr_sitechan, dbptr_calibration);
 dbptr_calibration = dbsubset(dbptr_calibration, 'sitechan.sta == calibration.sta && sitechan.chan == calibration.chan');
 nrecs = dbquery(dbptr_calibration, 'dbRECORD_COUNT');
-debug.print_debug(20,sprintf('After join site-sitechan-calibration: %d records', nrecs));
+debug.print_debug(2,sprintf('After join site-sitechan-calibration: %d records', nrecs));
 
 
 % Read data from final view
